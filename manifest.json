@@ -1,0 +1,25 @@
+{
+  "name": "Surf Erinnerung",
+  "description": "Windows Erinnerung für Webseiten die seit mind. 24 Stunden nicht besucht wurden",
+  "version": "1.0",
+  "manifest_version": 2,
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": ["notifications", "history", "alarms", "storage", "activeTab"],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "/images/surfalarm16.png",
+      "32": "/images/surfalarm32.png",
+      "48": "/images/surfalarm48.png",
+      "128": "/images/surfalarm128.png"
+    }
+  },
+  "icons": {
+    "16": "/images/surfalarm16.png",
+    "32": "/images/surfalarm32.png",
+    "48": "/images/surfalarm48.png",
+    "128": "/images/surfalarm128.png"
+  }
+}
