@@ -1,6 +1,12 @@
+//Objekt für "Speichern" Button holen
 let buttonok = document.getElementById("buttonok");
+
+//Zeitfeld Wert auf 18:00 (nicht wie im background initialisiert auf 18:30) setzen, welches wieder durch das Laden überschrieben wird, dient zur Initialisierung und auch zur Fehlerbehebung
 document.getElementById("zeit").value = "18:00"
 
+//Asynchrone Funktion mit Promise für Chrome API "Storage" Sync(wird im Chrome Profil gespeichert) Get - Daten mit dem empfangenen "key" aus dem Storage holen
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function getFromStorage(key) {
     return new Promise((resolve, reject) => {
         try {
@@ -10,7 +16,10 @@ async function getFromStorage(key) {
         } catch (e) { reject("Fehler beim Lesen aus dem Storage: " + e); }
     })
 }
- 
+
+//Asynchrone Funktion mit Promise für Chrome API "Storage" Sync(wird im Chrome Profil gespeichert) Set - Daten mit den empfangenen "key" und "value" in den Storage schreiben, wobei "value" alles mögliche von String bis Objekt sein kann
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function setToStorage(key, value) {
     return new Promise((resolve, reject) => {
         try {
@@ -21,6 +30,10 @@ async function setToStorage(key, value) {
     })
 }
 
+//Asynchrone Funktion, um die im Storage gespeicherte Zeit und die URL's 1-10 im Popup anzuzeigen
+//Objekt "su" bzw. "savedurls" wird mit await geladen (der Rest des Codes wartet auf das laden), welches die vom User gespeicherten URL's 1-10 enthält
+//Wert des Zeitfeldes auf der Seite setzen, welcher aus der Eigenschaft "zeit" aus dem Objekt "su" gelesen wird
+//Werte der Textfelder für URL's 1-10 auf der Seite setzen, welche aus den Eigenschaften "url1"-"url10" aus dem Objekt "su" gelesen werden
 async function URLsLaden() {
 	let su = (await getFromStorage("savedurls")).savedurls;
 	document.getElementById("zeit").value = su.zeit;
@@ -36,6 +49,10 @@ async function URLsLaden() {
 	document.getElementById("url10").value = su.url10;
 }
 
+//Verwendung des Button OnClick Events, um beim Klick auf den "Speichern" Button Code auszuführen, wobei eine Übergabe des Button Elementes über die Funktion stattfindet
+//Objekt "urls" definieren, mit den Eigenschaften "zeit", welche den Wert des Zeitfeldes auf der Seite bekommet, und den Eigenschaften "url1"-"url10", welche den jeweiligen Inhalt der gleichnamigen URL Textfeldern bekommen
+//Mit der setToStorage Funktion, wird das Objekt "urls" als "savedurls" im Storage gespeichert
+//Der Text "Gespeichert." wird über die Eigenschaft textContent in die HTML Tabellenzeile geschrieben, sodass der vorhandene Button durch diesen Text überschrieben wird
 buttonok.onclick = function(element) {
 	let urls = {
 		zeit: document.getElementById("zeit").value,
@@ -54,4 +71,5 @@ buttonok.onclick = function(element) {
 	document.getElementById("saved").textContent = "Gespeichert.";
 }
 
+//Funktionsaufruf für die Anzeige der gespeicherten Zeit und URL's auf der Seite
 URLsLaden();

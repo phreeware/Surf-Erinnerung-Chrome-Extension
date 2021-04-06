@@ -1,6 +1,6 @@
 {
   "name": "Surf Erinnerung",
-  "description": "Windows Erinnerung für Webseiten die seit mind. 24 Stunden nicht besucht wurden",
+  "description": "Windows/Mac Erinnerung für Webseiten die seit mind. 24 Stunden nicht besucht wurden",
   "version": "1.0",
   "manifest_version": 2,
   "background": {

@@ -1,3 +1,5 @@
+//Event Listener fürs Ausführen von Code bei der Installation des Plugins über die Runtime OnInstalled Chrome API
+//Der Storage für dieses Plugin wird mit der Funktion clearStorage gelöscht und Variablen bzw. Objekte und Arrays initialisiert und über die Funktion setToStorage im Storage gespeichert
 chrome.runtime.onInstalled.addListener(() => {
   clearStorage();
   let urls = {
@@ -18,6 +20,9 @@ chrome.runtime.onInstalled.addListener(() => {
   setToStorage("lng1", false);
 });
 
+//Asynchrone Funktion mit Promise für Chrome API "Storage" Sync(wird im Chrome Profil gespeichert) Get - Daten mit dem empfangenen "key" aus dem Storage holen
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function getFromStorage(key) {
     return new Promise((resolve, reject) => {
         try {
@@ -27,7 +32,10 @@ async function getFromStorage(key) {
         } catch (e) { reject("Fehler beim Lesen aus dem Storage: " + e); }
     })
 }
- 
+
+//Asynchrone Funktion mit Promise für Chrome API "Storage" Sync(wird im Chrome Profil gespeichert) Set - Daten mit den empfangenen "key" und "value" in den Storage schreiben, wobei "value" alles mögliche von String bis Objekt sein kann
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function setToStorage(key, value) {
     return new Promise((resolve, reject) => {
         try {
@@ -37,13 +45,19 @@ async function setToStorage(key, value) {
         } catch (e) { reject("Fehler beim Schreiben in den Storage: " + e); }
     })
 }
- 
+
+//Asynchrone Funktion mit Promise für Chrome API "Storage" Sync(wird im Chrome Profil gespeichert) Clear - Daten im Storage werden gelöscht
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function clearStorage() {
     return new Promise((resolve, reject) => {
         try { chrome.storage.sync.clear(resolve); } catch (e) { reject("Fehler beim Leeren des Storage: " + e); }
     })
 }
- 
+
+//Asynchrone Funktion mit Promise für Chrome API "History" Search - Einträge im Verlauf mit dem empfangenen Objekt "searchObj" durchsuchen 
+//Bei erfolgreichem Ausführen wird die Promise Antwort "resolve" zurückgegeben.
+//Wenn ein Fehler auftritt, wird die Promise Antwort "reject" zurückgegeben und der Fehler wird mit Übergabe des Fehlerstrings über die try/catch Routine zurückgegeben
 async function searchChromeHistory(searchObj) {
     return new Promise((resolve, reject) => {
         try {
@@ -52,11 +66,10 @@ async function searchChromeHistory(searchObj) {
     })
 }
 
-async function loadUrlVisits(url){
-		let visitItems = await searchChromeHistory({text: url, startTime: 0, maxResults: 1});
-		await processVisits(url, visitItems);
-}
-
+//Asynchrone Funktion um den erhaltenen Chrome History Verlaufseintrag zu prüfen, ob der Aufruf der Seite länger als 24 Stunden her ist inkl. Ausgabe in der Konsole
+//Bei Positivem Befund (noch nie besucht oder länger als 24 Stunden her) wird die Variable lng1 (länger als 1 Tag) mit await (Rest der Coadeausführung wartet darauf) über die setToStorage Funktion auf true gesetzt sowie ein Array "ua" bzw "urlalarm" 
+//mit await (Rest der Coadeausführung wartet darauf) über die getFromStorage Funktion geladen, mit await (Rest der Coadeausführung wartet darauf) und push mit der URL erweitert und mit await (Rest der Coadeausführung wartet darauf) 
+//über die setToStorage Funktion wieder in den Storage geschrieben (um das Array von überall her erreichbar zu machen)
 async function processVisits(url, visitItems) {
     if (Object.keys(visitItems).length !== 0) {
         console.log("Letzter Besuch von (" + url + "): " + new Date(visitItems[0].lastVisitTime).toString());
@@ -78,16 +91,27 @@ async function processVisits(url, visitItems) {
     };
 }
 
-chrome.alarms.create("1min", {
-  periodInMinutes: 1
-});
+//Asynchrone Funktion um eine URL gegen den Chrome Verlauf zu prüfen mit Übergabe eines Objektes und den nötigen Suchparametern (alle Verlaufseinträge, nur das neuste Resultat)
+//mit await (Rest der Coadeausführung wartet darauf) wird die URL und der im Objekt "visitItems" gespeicherte Chrome History Verlaufseintrag verarbeitet
+async function loadUrlVisits(url){
+		let visitItems = await searchChromeHistory({text: url, startTime: 0, maxResults: 1});
+		await processVisits(url, visitItems);
+}
 
-chrome.alarms.onAlarm.addListener(function(alarm) {
-  if (alarm.name === "1min") {
-	alarmfunktion();
-  };
-});
-
+//Asynchrone Funktion um die Systemnotification zu generieren, wenn die gewählte Zeit der aktuellen Zeit entspricht, und es mind. 1 URL gibt, die noch nie oder länger als 24 Stunden her besucht wurden:
+//Objekt "su" bzw. "savedurls" wird mit await geladen (der Rest des Codes wartet auf das laden), welches die vom User gespeicherten URL's 1-10 enthält
+//Die aktuelle Zeit wird in Stunden und Minuten gegen die vom User gewählte Zeit (Eigenschaft "zeit" im Objekt "su") geprüft. Bei einer Übereinstimmung wird
+//mit await (Rest der Coadeausführung wartet darauf) und setToStorage das array "urlalarm" im Storage initialisiert/geleert
+//Bei nicht leeren URL's 1-10 wird mit await (Rest der Coadeausführung wartet darauf) die jeweilige URL der Funktion loadUrlVisits zur Verarbeitung übergeben
+//Der Wert der Variable "lng1" wird mit await (Rest der Coadeausführung wartet darauf) und getFromStorage aus dem Storage gelesen
+//Wenn der Wert von "lng1" auf true steht (eine der URL's wurde noch nie oder seit 24 Stunden nicht besucht) wird folgendes ausgeführt:
+//Ein neues Objekt "opt" wird erstellt für die Übergabe an die Systemnotification mit den benötigten Eigenschaften wie das Bild des Icons, Typ, Art, Titel, Text, Priorität und einem Array für die Auflistung
+//Ein Array "ua" bzw "urlalarm", welches die zu erinnernden URL's enthält, wird mit await (Rest der Coadeausführung wartet darauf) über die getFromStorage Funktion geladen
+//Über eine For Schleife wird die EIgenschaft und Array "items" des Objektes "opt" mit den Werten aus dem Array "ua" als Objekteintrag in der Eigenschaft "message" über push erweitert
+//Das Array sowie auch das Objekt "opt" werden zur Kontrolle in der Konsole ausgegeben
+//Die Systemnotification wird mit dem Notifications Create Chrome API, der id 'notify1', der Übergabe vom Objekt "opt" und der optionalen Funktion mit Übergabe der notification id erstellt
+//Dabei wird auch der letzte Fehler über die Runtime LastError Chrome API in der Konsole ausgegeben, dies dient zur Protokollierung über das Resultat des Erstellens der Systemnotification und zur Feheranalyse
+//Der Wert der Variable "lng1" wird mit await (Rest der Coadeausführung wartet darauf) und setToStorage für die nächste Ausführung auf false zurückgesetzt
 async function alarmfunktion(){
 	let su = (await getFromStorage("savedurls")).savedurls;
 	
@@ -140,6 +164,23 @@ async function alarmfunktion(){
 	console.log('Ende Alarmfunktion-------------------------');
 }
 
+//Einen Timer mit dem Namen "1min" über die Alarms Create Chrome API mit der Eigenschaft periodInMinutes:1 (jede Minute ausführen) erstellen
+chrome.alarms.create("1min", {
+  periodInMinutes: 1
+});
+
+//Event Listener über die Alarms OnAlarm Chrome API erstellen, welches die Ausführung von Code bei einem Alarm/Timer ermöglicht
+//Das Alarmobjekt, welches bei Ausführung des Alarms/Timers in der Funktion übergeben wird, wird auf den Namen "1min" überprüft
+//Wenn der Name übereinstimmt, wird die Funktion alarmfunktion ausgeführt
+chrome.alarms.onAlarm.addListener(function(alarm) {
+  if (alarm.name === "1min") {
+	alarmfunktion();
+  };
+});
+
+//Event Listener über die Notifications OnClicked Chrome API erstellen, welches die Ausführung von Code bei einem Klick auf die Systemnotification ermöglicht
+//Die Notification Id, welche bei Ausführung in der Funktion übergeben wird, wird auf den String "notify1" überprüft
+//Bei Übereinstimmung wird ein neues Chrome Tab mit der Seite "tabpopup.html" geladen
 chrome.notifications.onClicked.addListener(function(notificationId, byUser) {
 	if (notificationId === "notify1") {
 		chrome.tabs.create({url:"tabpopup.html"});
